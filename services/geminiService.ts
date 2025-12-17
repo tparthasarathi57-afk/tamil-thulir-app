@@ -8,26 +8,27 @@ let audioContext: AudioContext | null = null;
 
 function getAudioContext() {
   if (!audioContext) {
-    audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({
-      sampleRate: 24000, // Gemini TTS standard output rate
-    });
-  }
-  if (audioContext.state === 'suspended') {
-    audioContext.resume();
+    // Do not force sampleRate here; let the browser/OS decide.
+    audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
   return audioContext;
 }
 
 export const generateSpeech = async (text: string): Promise<void> => {
   if (!API_KEY) {
-    console.error("API Key is missing");
-    return;
+    throw new Error("API Key is missing. Please check your configuration.");
+  }
+
+  const ctx = getAudioContext();
+  
+  // Critical: Resume audio context inside the user interaction handler
+  if (ctx.state === 'suspended') {
+    await ctx.resume();
   }
 
   try {
     const ai = new GoogleGenAI({ apiKey: API_KEY });
     
-    // Using the TTS model
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
       contents: [{ parts: [{ text: text }] }],
@@ -35,7 +36,7 @@ export const generateSpeech = async (text: string): Promise<void> => {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Puck' }, // Puck is usually clear for enunciation
+            prebuiltVoiceConfig: { voiceName: 'Puck' },
           },
         },
       },
@@ -44,16 +45,27 @@ export const generateSpeech = async (text: string): Promise<void> => {
     const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
     
     if (base64Audio) {
-      const ctx = getAudioContext();
       const rawBytes = decodeBase64(base64Audio);
+      // Gemini TTS usually returns 24kHz
       const audioBuffer = await decodeAudioData(rawBytes, ctx, 24000, 1);
       
       const source = ctx.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(ctx.destination);
       source.start();
+    } else {
+      console.warn("Gemini returned no audio data for text:", text);
     }
-  } catch (error) {
-    console.error("Error generating speech:", error);
+  } catch (error: any) {
+    console.error("Error generating speech for:", text, error);
+    
+    const msg = error?.message || JSON.stringify(error);
+    if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota")) {
+        alert("Daily learning limit reached! Please try again tomorrow.");
+    } else if (msg.includes("API Key")) {
+        alert("API Key is invalid or missing.");
+    } else {
+        console.warn("Speech generation failed:", msg);
+    }
   }
 };

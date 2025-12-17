@@ -13,9 +13,13 @@ export const SampleCard: React.FC<SampleCardProps> = ({ sample }) => {
   const handleClick = async () => {
     if (isLoading) return;
     setIsLoading(true);
-    // Passing just the Tamil word works well for pronunciation
-    await generateSpeech(sample.word);
-    setIsLoading(false);
+    try {
+      await generateSpeech(sample.word);
+    } catch (e: any) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

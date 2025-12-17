@@ -25,11 +25,13 @@ export const LetterCard: React.FC<LetterCardProps> = ({ letter, onClick, interac
     }
     
     setIsLoading(true);
-    // Add a slight descriptive prompt for clearer pronunciation if just a single char
-    // "The Tamil letter is ..." helps context, but sometimes just the char is better for raw sound.
-    // For Tamil, passing the character directly works well with recent models.
-    await generateSpeech(letter.char); 
-    setIsLoading(false);
+    try {
+      await generateSpeech(letter.char); 
+    } catch (e: any) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
