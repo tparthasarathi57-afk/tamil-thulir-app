@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { VOWELS, CONSONANTS, SAMPLE_WORDS } from '../constants';
 import { TestResult } from '../types';
 import { generateSpeech } from '../services/geminiService';

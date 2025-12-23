@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { VOWELS, CONSONANTS, SAMPLE_WORDS } from './constants';
 import { AppMode } from './types';
 import { LetterCard } from './components/LetterCard';

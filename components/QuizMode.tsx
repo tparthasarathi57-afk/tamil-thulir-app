@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { TamilLetter, QuizState } from '../types';
 import { VOWELS, CONSONANTS } from '../constants';
 import { generateSpeech } from '../services/geminiService';
-import { Volume2, RefreshCw, Star, CheckCircle2, XCircle } from 'lucide-react';
+import { Volume2, RefreshCw, Star, CheckCircle2 } from 'lucide-react';
 
 export const QuizMode: React.FC = () => {
   const [gameState, setGameState] = useState<QuizState>({
@@ -129,9 +129,6 @@ export const QuizMode: React.FC = () => {
                  <div className="absolute -top-3 -right-3 bg-white rounded-full p-1">
                     <CheckCircle2 className="text-green-500 w-8 h-8" />
                  </div>
-              )}
-               {gameState.isCorrect === false && gameState.isCorrect !== null && option.char !== gameState.currentQuestion?.char && stateStyles.includes('opacity-50') && ( // This logic is simplified for visual clarity
-                 <div className="hidden"></div>
               )}
             </button>
           );
