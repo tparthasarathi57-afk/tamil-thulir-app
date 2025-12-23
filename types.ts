@@ -1,7 +1,7 @@
 export interface TamilLetter {
   char: string;
   transliteration: string;
-  example?: string; // e.g., 'Amma' for 'A'
+  example?: string;
   color: string;
 }
 
@@ -17,7 +17,8 @@ export enum AppMode {
   LEARN_VOWELS = 'LEARN_VOWELS',
   LEARN_CONSONANTS = 'LEARN_CONSONANTS',
   SAMPLES = 'SAMPLES',
-  QUIZ = 'QUIZ'
+  QUIZ = 'QUIZ',
+  DIAGNOSTICS = 'DIAGNOSTICS'
 }
 
 export interface QuizState {
@@ -26,4 +27,12 @@ export interface QuizState {
   score: number;
   totalQuestions: number;
   isCorrect: boolean | null;
+}
+
+export interface TestResult {
+  id: string;
+  name: string;
+  category: 'vowel' | 'consonant' | 'sample';
+  status: 'pending' | 'running' | 'pass' | 'fail';
+  error?: string;
 }

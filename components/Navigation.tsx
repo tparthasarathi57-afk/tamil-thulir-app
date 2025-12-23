@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppMode } from '../types';
-import { Home, BookOpen, Layers, Trophy, Sparkles } from 'lucide-react';
+import { Home, BookOpen, Layers, Trophy, Sparkles, ShieldAlert } from 'lucide-react';
 
 interface NavigationProps {
   currentMode: AppMode;
@@ -14,6 +14,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentMode, setMode }) 
     { mode: AppMode.LEARN_CONSONANTS, label: 'Consonants', icon: Layers, color: 'bg-purple-500 text-white' },
     { mode: AppMode.SAMPLES, label: 'Samples', icon: Sparkles, color: 'bg-pink-500 text-white' },
     { mode: AppMode.QUIZ, label: 'Quiz', icon: Trophy, color: 'bg-yellow-500 text-white' },
+    { mode: AppMode.DIAGNOSTICS, label: 'Tests', icon: ShieldAlert, color: 'bg-red-500 text-white' },
   ];
 
   return (

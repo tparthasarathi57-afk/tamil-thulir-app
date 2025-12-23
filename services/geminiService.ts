@@ -3,25 +3,30 @@ import { decodeBase64, decodeAudioData } from "./audioUtils";
 
 const API_KEY = process.env.API_KEY || '';
 
-// Singleton AudioContext
 let audioContext: AudioContext | null = null;
 
 function getAudioContext() {
   if (!audioContext) {
-    // Do not force sampleRate here; let the browser/OS decide.
-    audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({
+      sampleRate: 24000,
+    });
   }
   return audioContext;
 }
 
-export const generateSpeech = async (text: string): Promise<void> => {
+/**
+ * Generates speech for a given text.
+ * Improved for single character accuracy and deployment reliability.
+ */
+export const generateSpeech = async (text: string): Promise<boolean> => {
   if (!API_KEY) {
-    throw new Error("API Key is missing. Please check your configuration.");
+    console.error("API Key is missing. Deployment check: Ensure VITE_API_KEY is set in Netlify.");
+    return false;
   }
 
   const ctx = getAudioContext();
   
-  // Critical: Resume audio context inside the user interaction handler
+  // Crucial: AudioContext must be resumed inside a user gesture handler.
   if (ctx.state === 'suspended') {
     await ctx.resume();
   }
@@ -29,43 +34,52 @@ export const generateSpeech = async (text: string): Promise<void> => {
   try {
     const ai = new GoogleGenAI({ apiKey: API_KEY });
     
+    // Explicitly ask for pronunciation to help the model with ambiguous characters like ஆ (AA)
+    const isSingleChar = [...text].length === 1;
+    const prompt = isSingleChar 
+      ? `Please pronounce the Tamil letter "${text}" clearly and slowly.` 
+      : `Say: ${text}`;
+
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: text }] }],
+      contents: [{ parts: [{ text: prompt }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Puck' },
+            prebuiltVoiceConfig: { voiceName: 'Kore' },
           },
         },
       },
     });
 
-    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    let base64Audio: string | undefined;
+    
+    // Some responses might have text parts before audio, iterate safely
+    if (response.candidates?.[0]?.content?.parts) {
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData?.data) {
+          base64Audio = part.inlineData.data;
+          break;
+        }
+      }
+    }
     
     if (base64Audio) {
       const rawBytes = decodeBase64(base64Audio);
-      // Gemini TTS usually returns 24kHz
       const audioBuffer = await decodeAudioData(rawBytes, ctx, 24000, 1);
       
       const source = ctx.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(ctx.destination);
       source.start();
-    } else {
-      console.warn("Gemini returned no audio data for text:", text);
+      return true;
     }
-  } catch (error: any) {
-    console.error("Error generating speech for:", text, error);
     
-    const msg = error?.message || JSON.stringify(error);
-    if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota")) {
-        alert("Daily learning limit reached! Please try again tomorrow.");
-    } else if (msg.includes("API Key")) {
-        alert("API Key is invalid or missing.");
-    } else {
-        console.warn("Speech generation failed:", msg);
-    }
+    console.warn("API responded but no audio bytes found for:", text);
+    return false;
+  } catch (error: any) {
+    console.error(`Gemini TTS Error for "${text}":`, error);
+    return false;
   }
 };

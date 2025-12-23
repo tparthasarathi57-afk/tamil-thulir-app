@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { VOWELS, CONSONANTS, SAMPLE_WORDS } from './constants';
 import { AppMode } from './types';
 import { LetterCard } from './components/LetterCard';
 import { SampleCard } from './components/SampleCard';
 import { Navigation } from './components/Navigation';
 import { QuizMode } from './components/QuizMode';
+import { TestRunner } from './components/TestRunner';
+import { Volume2 } from 'lucide-react';
 
 const App: React.FC = () => {
   const [mode, setMode] = useState<AppMode>(AppMode.HOME);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
 
   const renderContent = () => {
     switch (mode) {
@@ -23,6 +26,13 @@ const App: React.FC = () => {
                 <p className="text-xl md:text-2xl text-gray-600 font-medium">Tamil Thulir</p>
              </div>
              
+             {!audioUnlocked && (
+               <div className="bg-white/60 backdrop-blur-sm border border-orange-200 px-4 py-2 rounded-full flex items-center gap-2 text-orange-700 animate-bounce">
+                 <Volume2 size={18} />
+                 <span className="text-sm font-bold">Tap anywhere to unlock sounds!</span>
+               </div>
+             )}
+
              <p className="text-xl md:text-2xl max-w-md text-gray-700 leading-relaxed">
                Welcome kids! Let's learn the beautiful Tamil language with fun sounds and colors.
              </p>
@@ -119,6 +129,17 @@ const App: React.FC = () => {
             <QuizMode />
           </div>
         );
+
+      case AppMode.DIAGNOSTICS:
+        return (
+          <div className="pb-24 w-full h-full">
+            <header className="text-center mb-8">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-800">System Diagnostics</h2>
+              <p className="text-gray-500">Automated Testing of Interface Buttons</p>
+            </header>
+            <TestRunner />
+          </div>
+        );
         
       default:
         return null;
@@ -126,8 +147,10 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFbeb] selection:bg-orange-200">
-      {/* Background Blobs for Visual Interest */}
+    <div 
+      className="min-h-screen bg-[#FFFbeb] selection:bg-orange-200"
+      onClick={() => setAudioUnlocked(true)}
+    >
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div className="blob bg-yellow-300 w-96 h-96 rounded-full top-0 left-[-100px] opacity-30 mix-blend-multiply"></div>
         <div className="blob bg-blue-300 w-96 h-96 rounded-full bottom-0 right-[-100px] opacity-30 mix-blend-multiply"></div>

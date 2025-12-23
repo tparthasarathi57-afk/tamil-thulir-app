@@ -18,19 +18,6 @@ export const QuizMode: React.FC = () => {
   // Combine letters
   const allLetters = [...VOWELS, ...CONSONANTS];
 
-  const playQuestionAudio = async (letter: TamilLetter) => {
-    setLoadingAudio(true);
-    try {
-      // "Identify the letter..." helps contextualize for the model to speak clearly
-      await generateSpeech(`Identify the letter ${letter.char}`);
-    } catch (e: any) {
-      console.error(e);
-      // Only alert once to avoid spamming on load
-    } finally {
-      setLoadingAudio(false);
-    }
-  };
-
   const generateQuestion = useCallback(() => {
     // Pick a random letter
     const target = allLetters[Math.floor(Math.random() * allLetters.length)];
@@ -55,10 +42,7 @@ export const QuizMode: React.FC = () => {
     }));
 
     // Auto play sound for the question
-    // We need a small timeout to allow UI to render first
-    setTimeout(() => {
-        playQuestionAudio(target);
-    }, 500);
+    playQuestionAudio(target);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -66,8 +50,14 @@ export const QuizMode: React.FC = () => {
     generateQuestion();
   }, [generateQuestion]);
 
+  const playQuestionAudio = async (letter: TamilLetter) => {
+    setLoadingAudio(true);
+    // "Identify the letter..." helps contextualize for the model to speak clearly
+    await generateSpeech(`Identify the letter ${letter.char}`);
+    setLoadingAudio(false);
+  };
 
-  const handleOptionClick = async (selected: TamilLetter) => {
+  const handleOptionClick = (selected: TamilLetter) => {
     if (gameState.isCorrect !== null) return; // Prevent clicking after answer
 
     const isCorrect = selected.char === gameState.currentQuestion?.char;
@@ -79,14 +69,11 @@ export const QuizMode: React.FC = () => {
       isCorrect: isCorrect
     }));
 
-    try {
-      if (isCorrect) {
-         await generateSpeech("Correct! Very good.");
-      } else {
-         await generateSpeech(`Oops. That was ${selected.transliteration}. Try again.`);
-      }
-    } catch (e) {
-      console.error("Audio failed", e);
+    if (isCorrect) {
+       // Celebration sound could go here
+       generateSpeech("Correct! Very good.");
+    } else {
+       generateSpeech(`Oops. That was ${selected.transliteration}. Try again.`);
     }
 
     // Next question after delay
